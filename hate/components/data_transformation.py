@@ -50,6 +50,7 @@ class DataTransformation:
 
             # Let's change the name of the 'class' to label
             df.rename(columns={self.data_transformation_config.CLASS:self.data_transformation_config.LABEL},inplace =True)
+            df['tweet'] = df['tweet'].astype(str)
             logging.info(f"Exited the raw_data_cleaning function and returned the raw_data {df}")
             return df
 
