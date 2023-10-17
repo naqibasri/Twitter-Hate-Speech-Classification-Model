@@ -72,22 +72,27 @@ class TrainPipeline:
             raise CustomException(e, sys) from e
 
 
-    def start_model_pusher(self,) -> ModelPusherArtifacts:
-        logging.info("Entered the start_model_pusher method of TrainPipeline class")
-        try:
-            model_pusher = ModelPusher(
-                model_pusher_config=self.model_pusher_config,
-            )
-            model_pusher_artifact = model_pusher.initiate_model_pusher()
-            logging.info("Initiated the model pusher")
-            logging.info("Exited the start_model_pusher method of TrainPipeline class")
-            return model_pusher_artifact
+    def start_model_pusher(self,model_evaluation_artifacts: ModelEvaluationArtifacts) -> ModelPusherArtifacts:
+        if model_evaluation_artifacts.is_model_accepted == True:
+            logging.info("Entered the start_model_pusher method of TrainPipeline class")
+            try:
+                model_pusher = ModelPusher(
+                    model_pusher_config=self.model_pusher_config,
+                    model_evaluation_artifacts=model_evaluation_artifacts
+                )
+                model_pusher_artifact = model_pusher.initiate_model_pusher()
+                logging.info("Initiated the model pusher")
+                logging.info("Exited the start_model_pusher method of TrainPipeline class")
+                return model_pusher_artifact
 
-        except Exception as e:
-            raise CustomException(e, sys) from e
-        
+            except Exception as e:
+                raise CustomException(e, sys) from e
+        elif model_evaluation_artifacts.is_model_accepted == False:
+            logging.info(f"start_model_pusher() is not executed due to is_model_accepted is {model_evaluation_artifacts.is_model_accepted}")
+        else:
+            logging.info("is_model_accepted is undefined")
 
-    def run_pipeline(self) -> None:
+    def run_pipeline(self,) -> None:
         logging.info("Entered the run_pipeline method of TrainPipeline class")
         try:
             data_ingestion_artifacts = self.start_data_ingestion()
@@ -99,7 +104,7 @@ class TrainPipeline:
             model_evaluation_artifacts = self.start_model_evaluation(model_trainer_artifacts=model_trainer_artifacts,
                                                                     data_transformation_artifacts=data_transformation_artifacts)
             
-            model_pusher_artifacts = self.start_model_pusher()
+            model_pusher_artifacts = self.start_model_pusher(model_evaluation_artifacts=model_evaluation_artifacts)
 
             logging.info("Exited the run_pipeline method of TrainPipeline class")   
 

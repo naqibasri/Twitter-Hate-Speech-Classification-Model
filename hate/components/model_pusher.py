@@ -3,17 +3,16 @@ import os
 import shutil
 from hate.logger import logging
 from hate.exception import CustomException
-#from hate.configuration.gcloud_syncer import GCloudSync
 from hate.entity.config_entity import ModelPusherConfig
-from hate.entity.artifact_entity import ModelPusherArtifacts
+from hate.entity.artifact_entity import ModelPusherArtifacts, ModelEvaluationArtifacts
 
 class ModelPusher:
-    def __init__(self, model_pusher_config: ModelPusherConfig):
+    def __init__(self, model_pusher_config: ModelPusherConfig, model_evaluation_artifacts: ModelEvaluationArtifacts):
         """
         :param model_pusher_config: Configuration for model pusher
         """
         self.model_pusher_config = model_pusher_config
-        #self.gcloud = GCloudSync()
+        self.model_evaluation_artifacts = model_evaluation_artifacts
 
     def copy_file_locally(self) -> None:
         shutil.copy(self.model_pusher_config.TRAINED_MODEL_PATH, self.model_pusher_config.BEST_MODEL_PATH)
@@ -28,13 +27,10 @@ class ModelPusher:
         logging.info("Entered initiate_model_pusher method of ModelTrainer class")
         try:
             # Uploading the model to gcloud storage
-            os.makedirs(self.model_pusher_config.TRAINED_MODEL_PATH, exist_ok=True)
-            """self.gcloud.sync_folder_to_gcloud(self.model_pusher_config.BUCKET_NAME,
-                                              self.model_pusher_config.TRAINED_MODEL_PATH,
-                                              self.model_pusher_config.MODEL_NAME)"""
+            os.makedirs(self.model_pusher_config.BEST_MODEL_PATH, exist_ok=True)
             
             self.copy_file_locally()
-            logging.info("Uploaded best model to gcloud storage")
+            logging.info("Uploaded best model to best_Model_saved folder")
 
             # Saving the model pusher artifacts
             model_pusher_artifact = ModelPusherArtifacts(

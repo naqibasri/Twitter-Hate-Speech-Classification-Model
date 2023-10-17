@@ -5,12 +5,9 @@ import os
 @dataclass
 class DataIngestionConfig:
     def __init__(self):
-        #self.BUCKET_NAME:str = BUCKET_NAME
         self.ZIP_FILE_NAME: str = ZIP_FILE_NAME
         
         self.DATA_INGESTION_ARTIFACTS_DIR: str = os.path.join(os.getcwd(),ARTIFACTS_DIR,DATA_INGESTION_ARTIFACTS_DIR)
-        #self.DATA_ARTIFACTS_DIR: str = os.path.join(self.DATA_INGESTION_ARTIFACTS_DIR,DATA_INGESTION_IMBALANCE_DATA_DIR)
-        #self.NEW_DATA_ARTIFACTS_DIR: str = os.path.join(self.DATA_INGESTION_ARTIFACTS_DIR,DATA_INGESTION_RAW_DATA_DIR)
         self.DATASET_ARTIFACTS_DIR: str =  os.path.join(self.DATA_INGESTION_ARTIFACTS_DIR,DATASET_DIR)
         self.ZIP_FILE_DIR = os.path.join(self.DATA_INGESTION_ARTIFACTS_DIR)
         self.ZIP_FILE_PATH = os.path.join(self.DATA_INGESTION_ARTIFACTS_DIR,self.ZIP_FILE_NAME)
@@ -58,11 +55,10 @@ class ModelEvaluationConfig:
     def __init__(self):
         self.MODEL_EVALUATION_MODEL_DIR: str = os.path.join(os.getcwd(),ARTIFACTS_DIR, MODEL_EVALUATION_ARTIFACTS_DIR)
         self.BEST_MODEL_DIR_PATH: str = os.path.join(self.MODEL_EVALUATION_MODEL_DIR,BEST_MODEL_DIR)
-        #self.BUCKET_NAME = BUCKET_NAME 
+        self.BEST_MODEL_DIR_PATH_SOURCE: str = os.path.join(os.getcwd(),BEST_MODEL_DIR,MODEL_NAME)
         self.MODEL_NAME = MODEL_NAME 
-        #self.ZIP_FILE_NAME: str = ZIP_FILE_NAME
         self.src_file_path = os.path.join(os.getcwd(),ZIP_FILE_NAME)
-        self.BEST_MODEL_PATH = os.path.join(os.getcwd(),BEST_MODEL_DIR)
+        self.BEST_MODEL_PATH = os.path.join(self.MODEL_EVALUATION_MODEL_DIR,BEST_MODEL_DIR) #TODO Make sure correct. Change back to os.getcwd() if error
 
 
 
@@ -70,8 +66,8 @@ class ModelEvaluationConfig:
 class ModelPusherConfig:
 
     def __init__(self):
-        self.TRAINED_MODEL_PATH = os.path.join(os.getcwd(),ARTIFACTS_DIR, MODEL_TRAINER_ARTIFACTS_DIR)
-        #self.BUCKET_NAME = BUCKET_NAME
+        self.TRAINED_MODEL_PATH = os.path.join(os.getcwd(),ARTIFACTS_DIR, MODEL_TRAINER_ARTIFACTS_DIR, MODEL_NAME)
         self.MODEL_NAME = MODEL_NAME
-        self.BEST_MODEL_PATH = os.path.join(os.getcwd(),BEST_MODEL_DIR, MODEL_TRAINER_ARTIFACTS_DIR)
+        self.BEST_MODEL_PATH = os.path.join(os.getcwd(),BEST_MODEL_DIR)
+        
     

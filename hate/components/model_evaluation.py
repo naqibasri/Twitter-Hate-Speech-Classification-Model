@@ -1,5 +1,6 @@
 import os
 import sys
+import shutil
 import keras
 import pickle
 import numpy as np
@@ -8,9 +9,6 @@ from hate.logger import logging
 from hate.exception import CustomException
 from keras.utils import pad_sequences
 from hate.constants import *
-# from hate.ml.model import ModelArchitecture
-#from hate.configuration.gcloud_syncer import GCloudSync
-# from keras.preprocessing.text import Tokenizer
 from sklearn.metrics import confusion_matrix
 from hate.entity.config_entity import ModelEvaluationConfig
 from hate.entity.artifact_entity import ModelEvaluationArtifacts, ModelTrainerArtifacts, DataTransformationArtifacts
@@ -22,52 +20,33 @@ class ModelEvaluation:
                  model_trainer_artifacts: ModelTrainerArtifacts,
                  data_transformation_artifacts: DataTransformationArtifacts):
         """
-        :param model_evaluation_config: Configuration for model eva            model = model_architecture.get_model()
- data transformation artifact stage
+        :param model_evaluation_config: Configuration for model eva            
+        :param data_transformation_artifact: stage
         :param model_trainer_artifacts: Output reference of model trainer artifact stage
         """
 
         self.model_evaluation_config = model_evaluation_config
         self.model_trainer_artifacts = model_trainer_artifacts
         self.data_transformation_artifacts = data_transformation_artifacts
-        #self.gcloud = GCloudSync()
-
-    
-    '''def get_best_model_from_gcloud(self) -> str:
-        """
-        :return: Fetch best model from gcloud storage and store inside best model directory path
-        """
-        try:
-            logging.info("Entered the get_best_model_from_gcloud method of Model Evaluation class")
-
-            os.makedirs(self.model_evaluation_config.BEST_MODEL_DIR_PATH, exist_ok=True)
-
-            self.gcloud.sync_folder_from_gcloud(self.model_evaluation_config.BUCKET_NAME,
-                                                self.model_evaluation_config.MODEL_NAME,
-                                                self.model_evaluation_config.BEST_MODEL_DIR_PATH)
-
-            best_model_path = os.path.join(self.model_evaluation_config.BEST_MODEL_DIR_PATH,
-                                           self.model_evaluation_config.MODEL_NAME)
-            logging.info("Exited the get_best_model_from_gcloud method of Model Evaluation class")
-            return best_model_path
-        except Exception as e:
-            raise CustomException(e, sys) from e'''
      
-    
+    def copy_file_locally(self) -> None:
+        shutil.copy(self.model_evaluation_config.BEST_MODEL_DIR_PATH_SOURCE, self.model_evaluation_config.BEST_MODEL_DIR_PATH)
 
     def get_best_model(self) -> str:
         try: 
             logging.info("Entered the get_latest_model method of Model Evaluation class")
             os.makedirs(self.model_evaluation_config.BEST_MODEL_DIR_PATH, exist_ok=True)
-            """best_model_path = os.path.join(self.model_evaluation_config.BEST_MODEL_DIR_PATH,
-                                           self.model_evaluation_config.MODEL_NAME)"""
-            best_model_path = self.model_evaluation_config.BEST_MODEL_PATH
+            self.copy_file_locally()
+
+            best_model_path = os.path.join(self.model_evaluation_config.BEST_MODEL_DIR_PATH,
+                                           self.model_evaluation_config.MODEL_NAME)
+
             logging.info("Exited the get_latest_model method of Model Evaluation class")
             return best_model_path
         except Exception as e:
             raise CustomException(e, sys) from e
         
-    def evaluate(self):
+    def evaluate(self,model):
         """
 
         :param model: Currently trained model or best model from gcloud storage
@@ -85,7 +64,7 @@ class ModelEvaluation:
             with open('tokenizer.pickle', 'rb') as handle:
                 tokenizer = pickle.load(handle)
 
-            load_model=keras.models.load_model(self.model_trainer_artifacts.trained_model_path)
+            load_model=keras.models.load_model(model)
 
             x_test = x_test['tweet'].astype(str)
 
@@ -99,7 +78,7 @@ class ModelEvaluation:
             print(f"-----------------{x_test.shape}--------------")
             print(f"-----------------{y_test.shape}--------------")
             accuracy = load_model.evaluate(test_sequences_matrix,y_test)
-            logging.info(f"the test accuracy is {accuracy}")
+            logging.info(f"the test accuracy is {accuracy[1]}")
 
             lstm_prediction = load_model.predict(test_sequences_matrix)
             res = []
@@ -131,28 +110,27 @@ class ModelEvaluation:
             with open('tokenizer.pickle', 'rb') as handle:
                 load_tokenizer = pickle.load(handle)
 
-            trained_model_accuracy = self.evaluate()
+            trained_model_accuracy = self.evaluate(model=self.model_trainer_artifacts.trained_model_path)
 
             logging.info("Fetch best model")
             best_model_path = self.get_best_model()
 
-            logging.info("Check is best model present in the gcloud storage or not ?")
+            logging.info("Check is best model present in the best_Model_saved or not?")
             if os.path.isfile(best_model_path) is False:
                 is_model_accepted = True
-                logging.info("glcoud storage model is false and currently trained model accepted is true")
+                logging.info("best_Model_saved is false and currently trained model accepted is true")
 
             else:
-                logging.info("Load best model fetched from gcloud storage")
-                best_model=keras.models.load_model(best_model_path)
-                best_model_accuracy= self.evaluate()
+                logging.info("Load best model fetched from best_Model_saved folder")
+                best_model_accuracy= self.evaluate(model=best_model_path)
 
-                logging.info("Comparing loss between best_model_loss and trained_model_loss ? ")
-                if best_model_accuracy > trained_model_accuracy:
+                logging.info("Comparing loss between best_model_loss and trained_model_loss? ")
+                if best_model_accuracy[0] > trained_model_accuracy[0]:
                     is_model_accepted = True
-                    logging.info("Trained model not accepted")
+                    logging.info("Trained model accepted")
                 else:
                     is_model_accepted = False
-                    logging.info("Trained model accepted")
+                    logging.info("Trained model not accepted")
 
             model_evaluation_artifacts = ModelEvaluationArtifacts(is_model_accepted=is_model_accepted)
             logging.info("Returning the ModelEvaluationArtifacts")
